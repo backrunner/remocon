@@ -5,8 +5,3 @@ export interface RemoconClientEnv {
   cookie?: string;
   storage?: Record<string, unknown>;
 }
-
-export interface RemoconConsoleMessage {
-  type: string;
-  args: Array<unknown>;
-}
