@@ -1,9 +1,16 @@
 import { Socket } from 'socket.io';
+import { RemoconClientEnv } from './client';
 import { RemoconProject } from './project';
+
+export interface RemoconClientInitMessage {
+  project: RemoconProject;
+  env?: RemoconClientEnv;
+}
 
 export interface RemoconConnectMessage {
   project: RemoconProject;
   socket: Socket;
+  env?: RemoconClientEnv;
 }
 
 export interface RemoconDisconnectMessage {
