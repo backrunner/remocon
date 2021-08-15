@@ -49,7 +49,7 @@ program
     // init server
     server.emitter.on('connect', (message: RemoconConnectMessage) => {
       logger.info(`新连接建立 [${message.socket.id}]`);
-      logger.info(`项目信息: ${message.project.name} (${version})`);
+      logger.info(`项目信息: ${message.project.name} (${message.project.version})`);
     });
     server.emitter.on('disconnect', (message: RemoconDisconnectMessage) => {
       logger.warn(`连接已断开 [${message.project.name}] (${message.socketId}): ${message.reason}`);

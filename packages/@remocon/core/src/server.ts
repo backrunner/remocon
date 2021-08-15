@@ -50,7 +50,9 @@ class RemoconServer {
       });
     }
     // init socket.io
-    const io = new SocketIOServer();
+    const io = new SocketIOServer(this.httpServer, {
+      transports: ['websocket'],
+    });
     io.on('connection', (socket: Socket) => {
       // add to record
       sockets[socket.id] = socket;

@@ -3,6 +3,7 @@ import chalk from 'chalk';
 export enum LogType {
   debug = 'debug',
   trace = 'trace',
+  log = 'log',
   info = 'info',
   warn = 'warn',
   error = 'error',
@@ -12,6 +13,7 @@ export enum LogType {
 const TYPE_PREFIX_MAP = {
   [LogType.debug]: chalk.grey('[Debug]'),
   [LogType.trace]: chalk.hex('#333')('[Trace]'),
+  [LogType.log]: chalk.hex('#666')('[Log]'),
   [LogType.info]: chalk.blue('[Info]'),
   [LogType.warn]: chalk.yellow('[Yellow]'),
   [LogType.error]: chalk.red('[Error]'),
@@ -37,6 +39,12 @@ class Logger {
   trace(...args: unknown[]) {
     this.outputLog({
       type: LogType.trace,
+      args,
+    });
+  }
+  log(...args: unknown[]) {
+    this.outputLog({
+      type: LogType.log,
       args,
     });
   }

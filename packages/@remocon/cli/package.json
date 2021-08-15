@@ -45,7 +45,7 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
-    "@remocon/core": "^0.2.2",
+    "@remocon/core": "file:../core",
     "chalk": "^2.4.2",
     "commander": "^6.2.1",
     "inquirer": "^7.3.3",
