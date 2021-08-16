@@ -34,6 +34,16 @@ class RemoconClient {
     }
     this.io.on('connect', () => {
       this.init();
+    });
+    this.io.on("connect_error", () => {
+      setTimeout(() => {
+        this.io.connect();
+      }, 1000);
+    });
+    this.io.on('disconnect', () => {
+      this.inited = false;
+    });
+    this.io.on('ready', () => {
       this.inited = true;
       // send all cached msg
       while(this.cacheQueue.length) {
@@ -75,6 +85,9 @@ class RemoconClient {
     this.send('success', args);
   }
   private init() {
+    if (this.inited) {
+      return;
+    }
     const message: RemoconClientInitMessage = {
       project: this.project,
       env: getClientEnv(),

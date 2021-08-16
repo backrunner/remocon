@@ -1,10 +1,11 @@
-import { Server as SocketIOServer, Socket } from 'socket.io';
+import { Server as SocketIOServer, ServerOptions as SocketIOServerOpts, Socket } from 'socket.io';
 import { EventEmitter } from 'events';
 import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import { createServer as createHttpsServer, Server as HttpsServer } from 'https';
 import { RemoconConnectMessage, RemoconDisconnectMessage, RemoconConsoleMessage, RemoconClientConsoleMessage, RemoconClientInitMessage } from './interface/message';
 import { RemoconProject } from './interface/project';
 import { cleanHttpsCerts, getHttpsCerts } from './utils';
+import { nanoid } from 'nanoid';
 import Koa from 'koa';
 import KoaRouter from '@koa/router';
 
@@ -13,6 +14,7 @@ const projects: Record<string, RemoconProject> = {};
 
 export interface RemoconServerOpts {
   https?: boolean;
+  socketio?: SocketIOServerOpts;
 };
 
 interface HttpsCert {
@@ -52,6 +54,7 @@ class RemoconServer {
     // init socket.io
     const io = new SocketIOServer(this.httpServer, {
       transports: ['websocket'],
+      ...opts.socketio,
     });
     io.on('connection', (socket: Socket) => {
       // add to record
@@ -62,9 +65,14 @@ class RemoconServer {
         projects[socket.id] = project;
         const message: RemoconConnectMessage = {
           socket,
-          project,
+          project: project || {
+            name: `unknown-${nanoid(4)}`,
+            version: 'unknown',
+          },
           env: clientMsg.env,
         };
+        // tell clietn server is ready
+        socket.emit('ready');
         this.emitter.emit('connect', message);
       });
       socket.on('disconnect', (reason) => {
