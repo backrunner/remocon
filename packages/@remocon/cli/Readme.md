@@ -1,37 +1,27 @@
-# ts-cli-boilerplate
+# @remocon/cli
 
-Starting a Typescript cli project instantly.
+## 使用方式
 
-## Usage
-
-Clone this boilerplate by git:
+### 安装
 
 ```bash
-git clone https://github.com/backrunner/ts-cli-boilerplate.git -b main --depth 1
+npm install -g @remocon/cli
 ```
 
-And installing dependencies by npm:
+### 启动 Remocon
 
 ```bash
-npm install
+remocon start
 ```
 
-After installing, modify the properties in the `package.json`, like `name`, `homepage`, `repository`, and so on.
+可选参数：
 
-Also remember to modify the `Readme.md`.
+- `-p, --port` 指定端口
 
-Finally using `npm run build` to build your project.
+- `-s, --ssl` 启用 HTTPS
 
-## Intergrated packages
+- `--only <projectName>` 指定项目
 
-- Rollup (with babel, node-resolve, json plugins).
-
-- TypeScript and Babel.
-
-- Commander.js, Inquirer.js, chalk.
-
-- f2elint (useful lint initializer from alibaba).
-
-## License
+## 许可证
 
 MIT

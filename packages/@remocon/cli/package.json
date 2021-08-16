@@ -1,7 +1,7 @@
 {
   "name": "@remocon/cli",
   "version": "0.1.0",
-  "description": "Quickly staring a Typescript cli project",
+  "description": "Command line interface for Remocon",
   "main": "./bin/cli.js",
   "bin": {
     "remocon": "./bin/cli.js"
