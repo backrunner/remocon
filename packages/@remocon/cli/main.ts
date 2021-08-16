@@ -14,6 +14,7 @@ program.version(version);
 
 interface StartCommandOpts {
   port?: number;
+  only?: string;  // 过滤项目
   ssl: boolean;
 }
 
@@ -25,6 +26,7 @@ program
   .command('start')
   .option('-p, --port <port>')
   .option('-s, --ssl')
+  .option('--only <projectId>')
   .action(async (options: StartCommandOpts) => {
     let port: number | undefined;
     if (options.port) {
@@ -47,17 +49,38 @@ program
       https: options.ssl,
     });
     // init server
+    const { only } = options;
+    const hasOnly = !!(only?.trim());
+    const isTheOnly = (message: RemoconConnectMessage | RemoconDisconnectMessage | RemoconConsoleMessage) => {
+      const { project } = message;
+      if (project) {
+        const id = project.id || project.name;
+        if (only === id) {
+          return true;
+        }
+      }
+      return false;
+    }
     server.emitter.on('connect', (message: RemoconConnectMessage) => {
+      if (hasOnly && !isTheOnly(message)) {
+        return;
+      }
       logger.info(`新连接建立 [${message.socket.id}]`);
-      logger.info(`项目信息: ${message.project.name} (${message.project.version})`);
+      logger.info(`项目信息: ${message.project?.name || 'unknown'} (${message.project.version})`);
     });
     server.emitter.on('disconnect', (message: RemoconDisconnectMessage) => {
-      logger.warn(`连接已断开 [${message.project.name}] (${message.socketId}): ${message.reason}`);
+      if (hasOnly && !isTheOnly(message)) {
+        return;
+      }
+      logger.warn(`连接已断开 [${message.project?.name || 'unknown'}] (${message.socketId}): ${message.reason}`);
     });
     server.emitter.on('console-message', (message: RemoconConsoleMessage) => {
+      if (hasOnly && !isTheOnly(message)) {
+        return;
+      }
       const { args } = message;
       const logType: LogType = message.type as LogType;
-      args.unshift(`[${message.project.name}]`);
+      args.unshift(`[${message.project?.name || 'unknown'}]`);
       logger.outputLog({
         type: logType,
         args
@@ -75,6 +98,9 @@ program
     }`));
     if (options.ssl) {
       console.log(chalk.grey('HTTPS 已启用，请在设备上访问 /rootca 下载调试用根证书\n'));
+    }
+    if (hasOnly) {
+      console.log(chalk.gray(`您已设置仅接收来自项目 ${only} 的调试信息\n`));
     }
     console.log(chalk.grey('============================\n'));
     server.listen(port);
