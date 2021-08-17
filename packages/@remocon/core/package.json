@@ -1,6 +1,6 @@
 {
   "name": "@remocon/core",
-  "version": "0.2.6",
+  "version": "0.3.4",
   "description": "Core program for remocon",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

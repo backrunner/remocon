@@ -1,6 +1,6 @@
 {
   "name": "@remocon/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Command line interface for Remocon",
   "main": "./bin/cli.js",
   "bin": {
@@ -45,7 +45,7 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
-    "@remocon/core": "^0.2.6",
+    "@remocon/core": "^0.3.4",
     "chalk": "^2.4.2",
     "commander": "^6.2.1",
     "inquirer": "^7.3.3",

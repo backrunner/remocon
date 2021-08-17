@@ -2,7 +2,7 @@ import { Server as SocketIOServer, ServerOptions as SocketIOServerOpts, Socket }
 import { EventEmitter } from 'events';
 import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import { createServer as createHttpsServer, Server as HttpsServer } from 'https';
-import { RemoconConnectMessage, RemoconDisconnectMessage, RemoconConsoleMessage, RemoconClientConsoleMessage, RemoconClientInitMessage } from './interface/message';
+import { RemoconConnectMessage, RemoconDisconnectMessage, RemoconConsoleMessage, RemoconClientConsoleMessage, RemoconClientInitMessage, RemoconClientErrorMessage, RemoconErrorMessage } from './interface/message';
 import { RemoconProject } from './interface/project';
 import { cleanHttpsCerts, getHttpsCerts } from './utils';
 import { nanoid } from 'nanoid';
@@ -94,6 +94,13 @@ class RemoconServer {
           project: projects[socket.id],
         };
         this.emitter.emit('console-message', message);
+      });
+      socket.on('client-error', (clientMsg: RemoconClientErrorMessage) => {
+        const message: RemoconErrorMessage = {
+          ...clientMsg,
+          project: projects[socket.id],
+        };
+        this.emitter.emit('error-message', message);
       });
     });
     this.io = io;

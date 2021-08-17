@@ -29,3 +29,25 @@ export interface RemoconConsoleMessage {
   project: RemoconProject;
   args: unknown[];
 }
+
+export interface ClientUncaughtError {
+  message: string;
+  lineno: number;
+  colno: number;
+  filename: string;
+}
+
+export interface UnhandledPromiseRejection {
+  message: string;
+}
+
+export interface RemoconClientErrorMessage {
+  type: string;
+  error: ClientUncaughtError | UnhandledPromiseRejection;
+}
+
+export interface RemoconErrorMessage {
+  type: string;
+  project: RemoconProject;
+  error: ClientUncaughtError | UnhandledPromiseRejection;
+}

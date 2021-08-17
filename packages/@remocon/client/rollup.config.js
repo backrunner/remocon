@@ -9,7 +9,9 @@ import fs from 'fs';
 const extensions = ['.js', '.ts'];
 
 const pkg = JSON.parse(fs.readFileSync('./package.json'));
-const external = Object.keys(pkg.dependencies || {}).concat(['fs/promises', 'mysql2/promise']);
+const external = Object.keys(pkg.dependencies || {})
+  .concat(Object.keys(pkg.devDependencies || {}))
+  .concat(['fs/promises', 'mysql2/promise']);
 
 export default process.env.BUILD_TYPE === 'true' ? {
   input: './src/index.ts',

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import commander from 'commander';
 import portfinder from 'portfinder';
-import RemoconServer, { RemoconConnectMessage, RemoconConsoleMessage, RemoconDisconnectMessage } from '@remocon/core';
+import RemoconServer, { ClientUncaughtError, RemoconConnectMessage, RemoconConsoleMessage, RemoconDisconnectMessage, RemoconErrorMessage, UnhandledPromiseRejection } from '@remocon/core';
 import logger, { LogType } from './utils/logger';
 import { name, version } from './package.json';
 import { getIpList } from './utils';
@@ -65,14 +65,13 @@ program
       if (hasOnly && !isTheOnly(message)) {
         return;
       }
-      logger.info(`新连接建立 [${message.socket.id}]`);
-      logger.info(`项目信息: ${message.project?.name || 'unknown'} (${message.project.version})`);
+      logger.info(`新连接建立：${message.project?.name || 'unknown'} (${message.project.version}) [${message.socket.id}]`);
     });
     server.emitter.on('disconnect', (message: RemoconDisconnectMessage) => {
       if (hasOnly && !isTheOnly(message)) {
         return;
       }
-      logger.warn(`连接已断开 [${message.project?.name || 'unknown'}] (${message.socketId}): ${message.reason}`);
+      logger.warn(`连接已断开：[${message.project?.name || 'unknown'}] (${message.socketId}): ${message.reason}`);
     });
     server.emitter.on('console-message', (message: RemoconConsoleMessage) => {
       if (hasOnly && !isTheOnly(message)) {
@@ -85,6 +84,31 @@ program
         type: logType,
         args
       });
+    });
+    server.emitter.on('error-message', (message: RemoconErrorMessage) => {
+      if (message.type === 'uncaught') {
+        const error = message.error as ClientUncaughtError;
+        logger.outputLog({
+          type: LogType.error,
+          args: [
+            `[${message.project?.name || 'unknown'}]`,
+            `[Uncaught Error]`,
+            `[${error.filename} ${error.lineno}:${error.colno}]`,
+            error.message,
+          ],
+        });
+      } else if (message.type === 'promiseRejection') {
+        const error = message.error as UnhandledPromiseRejection;
+        logger.outputLog({
+          type: LogType.error,
+          args: [
+            `[${message.project?.name || 'unknown'}]`,
+            `[Unhandled Promise Rejection]`,
+            `[${error.message}]`,
+            message.error,
+          ],
+        });
+      }
     });
     // start
     console.log(chalk.green(`\n服务已启动并监听端口 [${port}]...`));

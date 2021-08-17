@@ -1,13 +1,26 @@
 /* eslint-disable no-console */
-import type { RemoconClientConsoleMessage, RemoconClientInitMessage, RemoconProject } from '@remocon/core';
+import { RemoconClientConsoleMessage, RemoconClientErrorMessage, RemoconClientInitMessage, RemoconProject } from '@remocon/core';
 import { io, Socket } from 'socket.io-client';
 import { getClientEnv } from './utils/env';
 
 interface RemoconClientOpts {
+  name?: string;
   host: string;
-  project: RemoconProject;
+  port?: number;
+  project?: RemoconProject;
   https: boolean;
   overwriteConsole: boolean;
+  errorCapture: boolean;
+}
+
+enum RemoconClientCacheType {
+  console = 1,
+  error = 2,
+}
+
+interface RemoconClientCache {
+  type: RemoconClientCacheType,
+  message: RemoconClientConsoleMessage | RemoconClientErrorMessage;
 }
 
 class RemoconClient {
@@ -15,8 +28,26 @@ class RemoconClient {
   private io: Socket;
   private project: RemoconProject;
   private inited: boolean;
-  private cacheQueue: RemoconClientConsoleMessage[];
-  constructor(opts: RemoconClientOpts) {
+  private cacheQueue: RemoconClientCache[];
+  constructor(userOpts: RemoconClientOpts) {
+    // init options
+    const opts: RemoconClientOpts = {
+      host: '',
+      https: false,
+      overwriteConsole: true,
+      errorCapture: true,
+    };
+    Object.assign(opts, userOpts);
+    if (opts.name && !opts.project) {
+      opts.project = {
+        name: opts.name,
+        version: 'unknown',
+      };
+    }
+    if (!opts.host.includes(':') && opts.port) {
+      opts.host = `${opts.host}:${opts.port}`;
+    }
+    // init properties
     this.url = `${opts.https ? 'wss://' : 'ws：//'}${opts.host}/`;
     this.project = opts.project;
     this.inited = false;
@@ -32,6 +63,29 @@ class RemoconClient {
         this.overwriteConsole(type);
       });
     }
+    // global error capture
+    if (opts.errorCapture) {
+      window.addEventListener('error', (e) => {
+        this.reportError({
+          type: 'uncaught',
+          error: {
+            message: e.message,
+            lineno: e.lineno,
+            colno: e.colno,
+            filename: e.filename,
+          },
+        });
+      });
+      window.addEventListener('unhandledrejection', (e) => {
+        this.reportError({
+          type: 'promiseRejection',
+          error: {
+            message: e.reason,
+          },
+        });
+      });
+    }
+    // socket events
     this.io.on('connect', () => {
       this.init();
     });
@@ -46,10 +100,7 @@ class RemoconClient {
     this.io.on('ready', () => {
       this.inited = true;
       // send all cached msg
-      while(this.cacheQueue.length) {
-        const cachedMsg = this.cacheQueue.shift();
-        this.io.emit('console-message', cachedMsg);
-      }
+      this.sendAllCached();
     });
   }
   send(type: string, args: unknown[]) {
@@ -58,10 +109,23 @@ class RemoconClient {
       args,
     };
     if (!this.inited) {
-      this.cacheQueue.push(message);
+      this.cacheQueue.push({
+        type: RemoconClientCacheType.console,
+        message,
+      });
       return;
     }
     this.io.emit('console-message', message);
+  }
+  sendAllCached() {
+    while(this.cacheQueue.length) {
+      const cachedMsg = this.cacheQueue.shift();
+      if (cachedMsg.type === RemoconClientCacheType.console) {
+        this.io.emit('console-message', cachedMsg.message);
+      } else if (cachedMsg.type === RemoconClientCacheType.error) {
+        this.io.emit('client-error', cachedMsg.message);
+      }
+    }
   }
   debug(...args: unknown[]) {
     this.send('debug', args);
@@ -83,6 +147,9 @@ class RemoconClient {
   }
   success(...args: unknown[]) {
     this.send('success', args);
+  }
+  reportError(message: RemoconClientErrorMessage) {
+    this.io.emit('client-error', message);
   }
   private init() {
     if (this.inited) {
