@@ -2,50 +2,58 @@ import resolve from '@rollup/plugin-node-resolve';
 import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
+import typescript from 'rollup-plugin-typescript2';
+import filesize from 'rollup-plugin-filesize';
 import { terser } from 'rollup-plugin-terser';
-import dts from 'rollup-plugin-dts';
-import fs from 'fs';
 
 const extensions = ['.js', '.ts'];
 
-const pkg = JSON.parse(fs.readFileSync('./package.json'));
-const external = Object.keys(pkg.dependencies || {})
-  .concat(Object.keys(pkg.devDependencies || {}))
-  .concat(['fs/promises', 'mysql2/promise']);
+const plugins = [
+  replace({
+    'process.env.NODE_ENV': JSON.stringify('production'),
+    preventAssignment: true,
+  }),
+  resolve({
+    extensions,
+    browser: true,
+  }),
+  commonjs(),
+  typescript({ useTsconfigDeclarationDir: true }),
+  babel({
+    exclude: ['./history/**'],
+    babelHelpers: 'bundled',
+    extensions,
+  }),
+  terser(),
+];
 
-export default process.env.BUILD_TYPE === 'true' ? {
+if (process.env.NODE_ENV === 'production') {
+  plugins.push(filesize({ showMinifiedSize: false, showBrotliSize: true }));
+}
+
+export default {
   input: './src/index.ts',
-  output: {
-    format: 'es',
-    file: 'types/index.d.ts',
-  },
-  external,
-  plugins: [
-    dts(),
-  ]
-}: {
-  input: './src/index.ts',
-  output: {
-    format: 'esm',
-    file: 'dist/index.js',
-    exports: 'named',
-    sourcemap: true,
-  },
-  external,
-  plugins: [
-    replace({
-      'process.env.NODE_ENV': JSON.stringify('production'),
-      preventAssignment: true,
-    }),
-    resolve({
-      extensions,
-    }),
-    commonjs(),
-    babel({
-      exclude: ['node_modules/**', './history/**'],
-      babelHelpers: 'bundled',
-      extensions,
-    }),
-    terser(),
+  output: [
+    {
+      format: 'esm',
+      file: 'dist/remocon.esm.js',
+      exports: 'named',
+      sourcemap: true,
+    },
+    {
+      format: 'umd',
+      file: 'dist/remocon.js',
+      exports: 'named',
+      sourcemap: true,
+      name: 'remocon',
+    },
+    {
+      format: 'iife',
+      file: 'dist/remocon.bundle.js',
+      exports: 'named',
+      sourcemap: true,
+      name: '__remocon__',
+    },
   ],
+  plugins,
 };

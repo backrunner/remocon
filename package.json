@@ -1,0 +1,29 @@
+{
+  "name": "remocon",
+  "description": "A remote web page debug tool",
+  "workspaces": [
+    "packages/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/backrunner/remocon.git"
+  },
+  "keywords": [
+    "debug"
+  ],
+  "author": "BackRunner",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/backrunner/remocon/issues"
+  },
+  "homepage": "https://github.com/backrunner/remocon#readme",
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.18.2",
+    "@typescript-eslint/eslint-plugin": "^5.30.0",
+    "@typescript-eslint/parser": "^5.30.0",
+    "eslint": "^8.18.0",
+    "eslint-config-alloy": "^4.6.0",
+    "eslint-config-prettier": "^8.5.0",
+    "prettier": "^2.7.1"
+  }
+}

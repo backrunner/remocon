@@ -1,5 +1,10 @@
 /* eslint-disable no-console */
-import { RemoconClientConsoleMessage, RemoconClientErrorMessage, RemoconClientInitMessage, RemoconProject } from '@remocon/core';
+import {
+  RemoconClientConsoleMessage,
+  RemoconClientErrorMessage,
+  RemoconClientInitMessage,
+  RemoconProject,
+} from '@remocon/core';
 import { io, Socket } from 'socket.io-client';
 import { getClientEnv } from './utils/env';
 
@@ -19,17 +24,20 @@ enum RemoconClientCacheType {
 }
 
 interface RemoconClientCache {
-  type: RemoconClientCacheType,
+  type: RemoconClientCacheType;
   message: RemoconClientConsoleMessage | RemoconClientErrorMessage;
 }
+
+type OverrideConsoleMethodType = 'log' | 'debug' | 'error' | 'warn';
 
 class RemoconClient {
   private url: string;
   private io: Socket;
-  private project: RemoconProject;
   private inited: boolean;
   private cacheQueue: RemoconClientCache[];
-  constructor(userOpts: RemoconClientOpts) {
+  private project?: RemoconProject;
+
+  public constructor(userOpts: RemoconClientOpts) {
     // init options
     const opts: RemoconClientOpts = {
       host: '',
@@ -60,7 +68,7 @@ class RemoconClient {
     if (opts.overwriteConsole) {
       const types = ['log', 'info', 'warn', 'error'];
       types.forEach((type: string) => {
-        this.overwriteConsole(type);
+        this.overwriteConsole(type as OverrideConsoleMethodType);
       });
     }
     // global error capture
@@ -89,7 +97,7 @@ class RemoconClient {
     this.io.on('connect', () => {
       this.init();
     });
-    this.io.on("connect_error", () => {
+    this.io.on('connect_error', () => {
       setTimeout(() => {
         this.io.connect();
       }, 1000);
@@ -103,7 +111,69 @@ class RemoconClient {
       this.sendAllCached();
     });
   }
-  send(type: string, args: unknown[]) {
+
+  public debug(...args: unknown[]) {
+    this.send('debug', args);
+  }
+  public trace(...args: unknown[]) {
+    this.send('trace', args);
+  }
+  public log(...args: unknown[]) {
+    this.send('log', args);
+  }
+  public info(...args: unknown[]) {
+    this.send('info', args);
+  }
+  public warn(...args: unknown[]) {
+    this.send('warn', args);
+  }
+  public error(...args: unknown[]) {
+    this.send('error', args);
+  }
+  public success(...args: unknown[]) {
+    this.send('success', args);
+  }
+  public reportError(message: RemoconClientErrorMessage) {
+    this.io.emit('client-error', message);
+  }
+
+  public init() {
+    if (this.inited) {
+      return;
+    }
+    const message: RemoconClientInitMessage = {
+      project: this.project || {
+        name: 'Default',
+        version: 'unknown',
+      },
+      env: getClientEnv(),
+    };
+    this.io.emit('init', message);
+  }
+
+  public sendAllCached() {
+    while (this.cacheQueue.length) {
+      const cachedMsg = this.cacheQueue.shift();
+      if (!cachedMsg) {
+        continue;
+      }
+      if (cachedMsg.type === RemoconClientCacheType.console) {
+        this.io.emit('console-message', cachedMsg.message);
+      } else if (cachedMsg.type === RemoconClientCacheType.error) {
+        this.io.emit('client-error', cachedMsg.message);
+      }
+    }
+  }
+
+  public overwriteConsole(type: OverrideConsoleMethodType) {
+    const originFn = console[type];
+    console[type] = (...args: unknown[]) => {
+      this[type](...args);
+      originFn.call(console, ...args);
+    };
+  }
+
+  private send(type: string, args: unknown[]) {
     const message: RemoconClientConsoleMessage = {
       type,
       args,
@@ -116,57 +186,6 @@ class RemoconClient {
       return;
     }
     this.io.emit('console-message', message);
-  }
-  sendAllCached() {
-    while(this.cacheQueue.length) {
-      const cachedMsg = this.cacheQueue.shift();
-      if (cachedMsg.type === RemoconClientCacheType.console) {
-        this.io.emit('console-message', cachedMsg.message);
-      } else if (cachedMsg.type === RemoconClientCacheType.error) {
-        this.io.emit('client-error', cachedMsg.message);
-      }
-    }
-  }
-  debug(...args: unknown[]) {
-    this.send('debug', args);
-  }
-  trace(...args: unknown[]) {
-    this.send('trace', args);
-  }
-  log(...args: unknown[]) {
-    this.send('log', args);
-  }
-  info(...args: unknown[]) {
-    this.send('info', args);
-  }
-  warn(...args: unknown[]) {
-    this.send('warn', args);
-  }
-  error(...args: unknown[]) {
-    this.send('error', args);
-  }
-  success(...args: unknown[]) {
-    this.send('success', args);
-  }
-  reportError(message: RemoconClientErrorMessage) {
-    this.io.emit('client-error', message);
-  }
-  private init() {
-    if (this.inited) {
-      return;
-    }
-    const message: RemoconClientInitMessage = {
-      project: this.project,
-      env: getClientEnv(),
-    }
-    this.io.emit('init', message);
-  }
-  private overwriteConsole(type: string) {
-    const originFn = console[type];
-    console[type] = (...args: unknown[]) => {
-      this[type](...args);
-      originFn.call(console, ...args);
-    }
   }
 }
 

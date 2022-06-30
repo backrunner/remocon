@@ -1,14 +1,14 @@
 # @remocon/client
 
-## 使用方式
+## Usage
 
-### Step.1 安装
+### Step.1 Install
 
 ```bash
 npm install @remocon/client -S
 ```
 
-### Step.2 引入到你的项目
+### Step.2 Import to your project
 
 ```js
 import Remocon from '@remocon/client';
@@ -20,10 +20,10 @@ const remocon = new Remocon({
   },
   host: 'localhost:8600',
   https: false,
-  overwriteConsole: false,  // 启用后会介入所有console方法
+  overwriteConsole: false,  // if enabled, it will rewrite console
 });
 ```
 
-## 许可证
+## License
 
 MIT
