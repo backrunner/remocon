@@ -2,12 +2,20 @@ import { Server as SocketIOServer, ServerOptions as SocketIOServerOpts, Socket }
 import { EventEmitter } from 'events';
 import { createServer as createHttpServer, Server as HttpServer } from 'http';
 import { createServer as createHttpsServer, Server as HttpsServer } from 'https';
-import { RemoconConnectMessage, RemoconDisconnectMessage, RemoconConsoleMessage, RemoconClientConsoleMessage, RemoconClientInitMessage, RemoconClientErrorMessage, RemoconErrorMessage } from './interface/message';
-import { RemoconProject } from './interface/project';
-import { cleanHttpsCerts, getHttpsCerts } from './utils';
 import { nanoid } from 'nanoid';
 import Koa from 'koa';
 import KoaRouter from '@koa/router';
+import {
+  RemoconConnectMessage,
+  RemoconDisconnectMessage,
+  RemoconConsoleMessage,
+  RemoconClientConsoleMessage,
+  RemoconClientInitMessage,
+  RemoconClientErrorMessage,
+  RemoconErrorMessage,
+} from './interface/message';
+import { RemoconProject } from './interface/project';
+import { cleanHttpsCerts, getHttpsCerts } from './utils/certs';
 
 const sockets: Record<string, Socket> = {};
 const projects: Record<string, RemoconProject> = {};
@@ -15,7 +23,7 @@ const projects: Record<string, RemoconProject> = {};
 export interface RemoconServerOpts {
   https?: boolean;
   socketio?: SocketIOServerOpts;
-};
+}
 
 interface HttpsCert {
   cert: string;
@@ -24,12 +32,14 @@ interface HttpsCert {
 
 class RemoconServer {
   emitter: EventEmitter;
+
   private httpServer: HttpServer | HttpsServer;
   private koaApp: Koa;
   private koaRouter: KoaRouter;
   private io: SocketIOServer;
   private httpsCert: HttpsCert | undefined;
-  constructor(opts: RemoconServerOpts) {
+
+  public constructor(opts: RemoconServerOpts) {
     // init eventemitter
     this.emitter = new EventEmitter();
     // init koa
@@ -41,9 +51,12 @@ class RemoconServer {
       this.httpServer = createHttpServer(this.koaApp.callback());
     } else {
       this.httpsCert = getHttpsCerts();
-      this.httpServer = createHttpsServer({
-        ...this.httpsCert,
-      }, this.koaApp.callback());
+      this.httpServer = createHttpsServer(
+        {
+          ...this.httpsCert,
+        },
+        this.koaApp.callback(),
+      );
       // register ca download route
       this.koaRouter.get('/rootca', (ctx) => {
         const isCer = ctx.query.type === 'cer';
@@ -105,35 +118,39 @@ class RemoconServer {
     });
     this.io = io;
   }
+
   // instance getter
-  getSocketIOInstance() {
+  public getSocketIOInstance() {
     return this.io;
   }
-  getHttpServer() {
+  public getHttpServer() {
     return this.httpServer;
   }
-  getKoaInstance() {
+  public getKoaInstance() {
     return {
       app: this.koaApp,
       router: this.koaRouter,
     };
   }
+
   // https certs related
-  getHttpCerts() {
+  public getHttpCerts() {
     return this.httpsCert;
   }
-  cleanHttpsCerts() {
+  public cleanHttpsCerts() {
     cleanHttpsCerts();
     this.httpsCert = undefined;
   }
-  generateHttpsCerts() {
+  public generateHttpsCerts() {
     this.httpsCert = getHttpsCerts();
   }
+
   // server action
-  close() {
+  public close() {
     this.httpServer.close();
   }
-  async listen(port: number) {
+
+  public async listen(port: number) {
     this.httpServer.listen(port);
   }
 }
