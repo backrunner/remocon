@@ -4,7 +4,6 @@ export const getIpList = () => {
   const ipList: string[] = [];
   const ifaces = os.networkInterfaces();
   Object.keys(ifaces).forEach((ifname) => {
-
     const iface = ifaces[ifname];
     if (!iface) {
       return;

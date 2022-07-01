@@ -1,27 +1,27 @@
 # @remocon/cli
 
-## 使用方式
+## Usage
 
-### 安装
+### Install
 
 ```bash
 npm install -g @remocon/cli
 ```
 
-### 启动 Remocon
+### Starting Remocon
 
 ```bash
 remocon start
 ```
 
-可选参数：
+Options：
 
-- `-p, --port` 指定端口
+- `-p, --port` Specify a port for Remocon Server
 
-- `-s, --ssl` 启用 HTTPS
+- `-s, --ssl` Enable HTTPS
 
-- `--only <projectName>` 指定项目
+- `--only <projectName>` Specify the project filter
 
-## 许可证
+## License
 
 MIT

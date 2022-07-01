@@ -11,7 +11,7 @@ const extensions = ['.js', '.ts'];
 export default {
   input: 'main.ts',
   output: {
-    file: './bin/cli.js',
+    file: './dist/cli.js',
     format: 'cjs',
     banner: '#!/usr/bin/env node',
   },
@@ -20,10 +20,12 @@ export default {
     nodeResolve({
       extensions,
       modulesOnly: true,
+      browser: false,
+      preferBuiltins: true,
     }),
     json(),
     babel({
-      exclude: ['node_modules/**', './history/**'],
+      exclude: ['./node_modules/**', './history/**'],
       babelHelpers: 'bundled',
       extensions,
     }),

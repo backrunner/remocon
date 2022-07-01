@@ -1,11 +1,18 @@
 /* eslint-disable no-console */
 import commander from 'commander';
 import portfinder from 'portfinder';
-import RemoconServer, { ClientUncaughtError, RemoconConnectMessage, RemoconConsoleMessage, RemoconDisconnectMessage, RemoconErrorMessage, UnhandledPromiseRejection } from '@remocon/core';
-import logger, { LogType } from './utils/logger';
-import { name, version } from './package.json';
-import { getIpList } from './utils';
 import chalk from 'chalk';
+import RemoconServer, {
+  ClientUncaughtError,
+  RemoconConnectMessage,
+  RemoconConsoleMessage,
+  RemoconDisconnectMessage,
+  RemoconErrorMessage,
+  UnhandledPromiseRejection,
+} from '@remocon/core';
+import logger, { LogType } from './utils/logger';
+import { getIpList } from './utils/network';
+import { name, version } from './package.json';
 
 const program = new commander.Command();
 
@@ -14,7 +21,7 @@ program.version(version);
 
 interface StartCommandOpts {
   port?: number;
-  only?: string;  // 过滤项目
+  only?: string; // 过滤项目
   ssl: boolean;
 }
 
@@ -50,8 +57,10 @@ program
     });
     // init server
     const { only } = options;
-    const hasOnly = !!(only?.trim());
-    const isTheOnly = (message: RemoconConnectMessage | RemoconDisconnectMessage | RemoconConsoleMessage) => {
+    const hasOnly = !!only?.trim();
+    const isTheOnly = (
+      message: RemoconConnectMessage | RemoconDisconnectMessage | RemoconConsoleMessage,
+    ) => {
       const { project } = message;
       if (project) {
         const id = project.id || project.name;
@@ -60,18 +69,26 @@ program
         }
       }
       return false;
-    }
+    };
     server.emitter.on('connect', (message: RemoconConnectMessage) => {
       if (hasOnly && !isTheOnly(message)) {
         return;
       }
-      logger.info(`新连接建立：${message.project?.name || 'unknown'} (${message.project.version}) [${message.socket.id}]`);
+      logger.info(
+        `新连接建立：${message.project?.name || 'unknown'} (${message.project.version}) [${
+          message.socket.id
+        }]`,
+      );
     });
     server.emitter.on('disconnect', (message: RemoconDisconnectMessage) => {
       if (hasOnly && !isTheOnly(message)) {
         return;
       }
-      logger.warn(`连接已断开：[${message.project?.name || 'unknown'}] (${message.socketId}): ${message.reason}`);
+      logger.warn(
+        `连接已断开：[${message.project?.name || 'unknown'}] (${message.socketId}): ${
+          message.reason
+        }`,
+      );
     });
     server.emitter.on('console-message', (message: RemoconConsoleMessage) => {
       if (hasOnly && !isTheOnly(message)) {
@@ -82,7 +99,7 @@ program
       args.unshift(`[${message.project?.name || 'unknown'}]`);
       logger.outputLog({
         type: logType,
-        args
+        args,
       });
     });
     server.emitter.on('error-message', (message: RemoconErrorMessage) => {
@@ -112,14 +129,16 @@ program
     });
     // start
     console.log(chalk.green(`\n服务已启动并监听端口 [${port}]...`));
-    console.log(chalk.green(`\n您可以通过以下地址连接 Remocon：\n\n${
-      getIpList().reduce((res, item, index) => {
-        if (index === 1) {
-          return `${res}:${port}\n${item}:${port}\n`;
-        }
-        return `${res}${item}:${port}\n`;
-      })
-    }`));
+    console.log(
+      chalk.green(
+        `\n您可以通过以下地址连接 Remocon：\n\n${getIpList().reduce((res, item, index) => {
+          if (index === 1) {
+            return `${res}:${port}\n${item}:${port}\n`;
+          }
+          return `${res}${item}:${port}\n`;
+        })}`,
+      ),
+    );
     if (options.ssl) {
       console.log(chalk.grey('HTTPS 已启用，请在设备上访问 /rootca 下载调试用根证书\n'));
     }
